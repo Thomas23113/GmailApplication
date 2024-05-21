@@ -12,7 +12,7 @@ window.title("Email application")
 # create variables for storing information
 textAdressSender = tk.StringVar(value = "calcotest123@gmail.com")   # Gives the entry field an initial value
 textAdressRecipient = tk.StringVar()
-textpass = tk.StringVar(value = "")              # Gives the entry field an initial value
+textpass = tk.StringVar(value = "")                                 # Gives the entry field an initial value
 textheader = tk.StringVar()
 textemail = tk.StringVar()
 
@@ -71,9 +71,11 @@ button_remove.grid(row = 2, column = 2, padx = 30, pady = 10 )
 # Email listbox
 email_listbox = tk.Listbox(window, width=80, height=20)
 email_listbox.grid(row=3, column=2, columnspan=2, padx=30, pady=20)
+# code for selecting individual emails
+email_listbox.bind("<Double-Button-1>", lambda event: OnDoubleClick(event, textAdressSender, textpass, window))
 
 # Fetch button
-fetch_button = tk.Button(window, text="Fetch Emails", command=on_fetch_click(textAdressSender, textpass, email_listbox))
+fetch_button = tk.Button(window, text="Fetch Emails", command= lambda: on_fetch_click(textAdressSender, textpass, email_listbox))
 fetch_button.grid(row=4, column=2, columnspan=2, padx=30, pady=10)
 
 # Start the Tkinter event loop

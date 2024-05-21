@@ -1,5 +1,7 @@
 from tkinter.messagebox import showinfo
+from tkinter import *
 from tkinter import filedialog
+from tkinter.ttk import *
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -134,6 +136,8 @@ def fetch_emails(sender_email, password, email_listbox):
     result, data = mail.search(None, 'ALL')
     # Clear the existing listbox
     email_listbox.delete(0, tk.END)
+    # Store email numbers
+
     # Loop through the email IDs
     for num in data[0].split():
         # Fetch the email using the ID
@@ -144,7 +148,6 @@ def fetch_emails(sender_email, password, email_listbox):
         # Extract required information like sender, subject, etc.
         from_ = email.utils.parseaddr(email_message['From'])[1]
         subject = email_message['Subject']
-        snippet = email_message.get_payload()
         # Display the information in the listbox
         email_listbox.insert(tk.END, f"From: {from_}, Subject: {subject}")
     # Logout from the server
@@ -154,3 +157,74 @@ def on_fetch_click(textAdressSender, textpass, email_listbox):
     sender_email = textAdressSender.get()
     password = textpass.get()
     fetch_emails(sender_email, password, email_listbox)
+
+def OnDoubleClick(event, sender_email, textpass, window):
+        # make all Stringvar objects Strings
+        sender_email = sender_email.get()
+        password = textpass.get()
+        
+        #connect to the server and login
+        mail = imaplib.IMAP4_SSL('imap.gmail.com')
+
+        mail.login(sender_email, password)
+        mail.select('inbox')
+        
+        # Search for emails
+        result, data = mail.search(None, 'ALL')
+        # store email numbers
+        email_numbers = data[0].split()
+        # Extracts the exact values of the object you selected in the list box
+        widget = event.widget
+        selection= widget.curselection()[0]
+        # value = widget.get(selection[0])
+        email_number = email_numbers[selection] #find email UID
+        # Fetch the email message
+        status, data = mail.fetch(email_number, "(RFC822)")
+        raw_email = data[0][1]
+        
+
+        if status == 'OK':
+            raw_email_bytes = data[0][1]
+
+            # decode bytes into a string
+            msg = raw_email_bytes.decode('utf-8')
+            #parse email
+            email_message_click = email.message_from_string(msg)
+            # fetch the header
+            subject_click = email_message_click['Subject']
+            # Get the body of the email
+            body_click = get_body(email_message_click)
+            open_new_window(window, subject_click,body_click)
+        else:
+            print("Failed to fetch email with status:", status)
+
+def get_body(message: email.message.Message, encoding: str = "utf-8") -> str:
+    body_in_bytes = ""
+    if message.is_multipart():
+        for part in message.walk():
+            ctype = part.get_content_type()
+            cdispo = str(part.get("Content-Disposition"))
+
+            # Skip any text/plain (txt) attachments
+            if ctype == "text/plain" and "attachment" not in cdispo:
+                body_in_bytes = part.get_payload(decode=True)  # Decode
+                break
+    else:
+        body_in_bytes = message.get_payload(decode=True)
+
+    body = body_in_bytes.decode(encoding)
+    return body
+
+def open_new_window(window, subject, body):
+    import tkinter as tk
+    #Create a new window on top of the other window
+    newWindow = Toplevel(window)
+    
+    # add traits of the new window
+    newWindow.title(subject)
+    newWindow.geometry("400x200")
+    # Add body as the main text
+    label = tk.Label(newWindow, text=body, wraplength=180)  # wraplength ensures text wraps within the window
+    label.grid(row = 0, column = 0, sticky= 'n')
+    label.pack()
+
